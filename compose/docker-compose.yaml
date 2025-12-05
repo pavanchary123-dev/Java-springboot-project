@@ -30,23 +30,21 @@ services:
         condition: service_healthy
     networks:
       - datastore
-  fe-app:
+    fe-app:
     container_name: fe-app
     build:
-      context:  ../frontend
-      dockerfile: Dockerfile-frontend
-      args:
-        TAG: compose-v1
+      context: ../frontend
+      dockerfile: Dockerfile
     environment:
       API_URL: http://be-app:8084
-    links:
-      - be-app
     ports:
-      - 8585:8080
+      - "8787:8080"
     depends_on:
       - be-app
     networks:
       - datastore
+    restart: unless-stopped
+
 networks:
   datastore:
     driver: bridge
