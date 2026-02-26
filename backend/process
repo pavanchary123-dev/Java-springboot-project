@@ -2,11 +2,11 @@ mvn clean package -Dspring.profiles.active=build
 
 move jara file into /root directory 
 
-MYSQL_HOST=jdbc:database-1.can0ws8oqjny.us-east-1.rds.amazonaws.com:3306/datastore?createDatabaseIfNotExist=true \
-MYSQL_USERNAME=admin \
-MYSQL_PASSWORD=Cloud123 \
-nohup java -jar ./datastore-0.0.7.jar > /var/log/app/nohup.out 2>&1 &
+export SPRING_DATASOURCE_URL="jdbc:mysql://database.cqvaawsyan49.us-east-1.rds.amazonaws.com:3306/datastore?createDatabaseIfNotExist=true"
+export SPRING_DATASOURCE_USERNAME="admin"
+export SPRING_DATASOURCE_PASSWORD="pavan1234"
 
+nohup java -jar datastore-0.0.7.jar > app.log 2>&1 &
 
 ####edit the sudo file 
 vi /etc/sudoers
