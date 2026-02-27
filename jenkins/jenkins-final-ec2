@@ -103,3 +103,121 @@ pipeline {
         }
     }
 }
+
+
+
+#### this code will not expose db credentials they need to be mension in global variables and make jenkins full access to sudors
+by using this cmd ---> jenkins ALL=(ALL) NOPASSWD: ALL
+pipeline {
+    agent any
+
+    environment {
+        SONARQUBE = 'sonar'
+        JAR_NAME = 'datastore-0.0.7.jar'
+    }
+
+    stages {
+
+        stage('SCM') {
+            steps {
+                git branch: 'main', url: 'https://github.com/CloudTechDevOps/Java-springboot-project.git'
+            }
+        }
+
+        stage('Clean') {
+            steps {
+                dir('backend') {
+                    sh 'mvn clean'
+                }
+            }
+        }
+
+        stage('Code Quality') {
+            steps {
+                withSonarQubeEnv(SONARQUBE) {
+                    dir('backend') {
+                        sh 'mvn clean package -DskipTests=true'
+                        sh 'mvn sonar:sonar'
+                    }
+                }
+            }
+        }
+
+        stage('Quality Gate') {
+            steps {
+                script {
+                    def qg = waitForQualityGate()
+                    if (qg.status != 'OK') {
+                        error "❌ Quality Gate Failed"
+                    }
+                }
+            }
+        }
+
+        stage('Build Package') {
+            steps {
+                dir('backend') {
+                    sh 'mvn clean package -DskipTests=true'
+                }
+            }
+        }
+
+        stage('Copy JAR to Workspace') {
+            steps {
+                sh '''
+                sudo mkdir -p /var/log/app
+                sudo chown -R jenkins:jenkins /var/log/app
+                sudo chmod 777 /var/log/app
+                '''
+                sh '''
+                sudo cp backend/target/${JAR_NAME} ${WORKSPACE}/${JAR_NAME}
+                sudo chmod 755 ${WORKSPACE}/${JAR_NAME}
+                '''
+            }
+        }
+
+        stage('Stop Old Application') {
+            steps {
+                sh '''
+                PID=$(pgrep -f datastore-0.0.7.jar || true)
+                if [ -n "$PID" ]; then
+                    echo "Stopping existing application with PID: $PID"
+                    sudo kill -9 $PID
+                else
+                    echo "No existing application running"
+                fi
+                '''
+            }
+        }
+
+       stage('Run Application') {
+            steps {
+        withCredentials([
+            string(credentialsId: 'mysql-user', variable: 'DB_USER'),
+            string(credentialsId: 'mysql-pass', variable: 'DB_PASS')
+        ]) {
+            sh '''
+            export SPRING_DATASOURCE_URL="jdbc:mysql://database.cixggcyqm9qb.us-east-1.rds.amazonaws.com:3306/datastore?createDatabaseIfNotExist=true"
+            export SPRING_DATASOURCE_USERNAME="$DB_USER"
+            export SPRING_DATASOURCE_PASSWORD="$DB_PASS"
+            export LOG_FILE_PATH="/var/log/app/datastore.log"
+
+            sudo nohup java -jar datastore-0.0.7.jar \
+            --server.port=8084 \
+            > /var/log/app/nohup.out 2>&1 &
+            '''
+        }
+    }
+}
+}
+
+    post {
+        success {
+            echo '🎉 Application Deployed Successfully & Running on EC2'
+        }
+        failure {
+            echo '❌ Pipeline Failed'
+        }
+    }
+}
+
