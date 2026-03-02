@@ -69,7 +69,7 @@ jobs:
         uses: appleboy/ssh-action@v1.1.0
         with:
           host: ${{ secrets.EC2_HOST }}
-          username: root
+          username: ec2-user
           key: ${{ secrets.EC2_KEY }}
           script_stop: false
           script: |
