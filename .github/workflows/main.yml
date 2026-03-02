@@ -20,24 +20,24 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      # # 3️⃣ Clean & Package + SonarQube Scan
-      # - name: Sonar Scan
-      #   env:
-      #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      #   run: |
-      #     mvn clean verify sonar:sonar \
-      #       -DskipTests \
-      #       -Dsonar.projectKey=myproject \
-      #       -Dsonar.host.url=${{ secrets.SONAR_URL }} \
-      #       -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+      # 3️⃣ Clean & Package + SonarQube Scan
+      - name: Sonar Scan
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          mvn clean verify sonar:sonar \
+            -DskipTests \
+            -Dsonar.projectKey=myproject \
+            -Dsonar.host.url=${{ secrets.SONAR_URL }} \
+            -Dsonar.login=${{ secrets.SONAR_TOKEN }}
 
 
       # 4️⃣ Quality Gate Check
-      # - name: Quality Gate
-      #   uses: sonarsource/sonarqube-quality-gate-action@v1
-      #   timeout-minutes: 5
-      #   with:
-      #     scanMetadataReportFile: target/site/sonar/report-task.txt
+      - name: Quality Gate
+        uses: sonarsource/sonarqube-quality-gate-action@v1
+        timeout-minutes: 5
+        with:
+          scanMetadataReportFile: target/site/sonar/report-task.txt
 
       # 5️⃣ Build final JAR
       - name: Build JAR
